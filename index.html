@@ -23,7 +23,7 @@
         text-align: center;
         margin-top: 20px;
         margin-bottom: 20px;
-        font-size: 2rem; 
+        font-size: 2rem;
         font-weight: 700;
       }
 
@@ -95,7 +95,7 @@
 
         .controls select,
         .controls button {
-          width: 100%; 
+          width: 100%;
         }
       }
 
@@ -143,13 +143,27 @@
 
       <canvas id="pieChart" width="200" height="200"></canvas>
     </div>
+<!--
+    <div
+      id="comparisonTable"
+      class="chart-container"
+      style="margin-top: 20px"
+    ></div> -->
 
     <script>
       document.addEventListener("DOMContentLoaded", function () {
         const ctx = document.getElementById("pieChart").getContext("2d");
         let chart;
 
-        function updateChart(data) {
+        async function updateChart(data, operation, line, shift) {
+          const comparisonData = await fetchComparisonData(
+            line,
+            operation
+          ).catch((error) => {
+            console.error("Failed to fetch comparison data:", error);
+            return [];
+          });
+
           if (chart) {
             chart.destroy();
           }
@@ -157,7 +171,6 @@
           chart = new Chart(ctx, {
             type: "pie",
             data: {
-
               labels: ["High Quality", "Medium Quality", "Low Quality"],
               datasets: [
                 {
@@ -168,54 +181,22 @@
                 },
               ],
             },
-
             options: {
               responsive: true,
               plugins: {
-                legend: {
-                  position: "top",
-                  labels: {
-                    font: {
-                      size: 16,
-                      weight: "bold",
-                    },
-
-                    generateLabels: function (chart) {
-                      const dataset = chart.data.datasets[0];
-
-                      return chart.data.labels.map((label, index) => {
-                        const value = dataset.data[index];
-                        const sum = dataset.data.reduce((a, b) => a + b, 0);
-                        const percentage =
-                          ((value / sum) * 100).toFixed(1) + "%";
-
-                        return {
-                          text: `${label}: ${value} (${percentage})`,
-                          fillStyle: dataset.backgroundColor[index],
-                        };
-                      });
-                    },
-                  },
-                },
+                legend: { position: "top" },
                 datalabels: {
                   color: "#333",
-
                   anchor: "center",
-
                   align: (context) => {
                     const label = context.chart.data.labels[context.dataIndex];
                     return label === "Medium Quality" ? "center" : "start";
                   },
-
                   offset: (context) => {
                     const label = context.chart.data.labels[context.dataIndex];
                     return label === "Medium Quality" ? -10 : 10;
                   },
-
-                  font: {
-                    size: 16,
-                  },
-
+                  font: { size: 16 },
                   formatter: (value, ctx) => {
                     let sum = ctx.dataset.data.reduce((a, b) => a + b, 0);
                     let percentage = ((value / sum) * 100).toFixed(1) + "%";
@@ -226,23 +207,50 @@
             },
             plugins: [ChartDataLabels],
           });
+
+          renderComparisonTable(comparisonData);
         }
 
         async function fetchData(operation, line, shift) {
-          const response = await fetch(
+          const dataResponse = await fetch(
             `https://p4data.onrender.com/data?operation=${encodeURIComponent(
               operation
             )}&line=${encodeURIComponent(line)}&shift=${encodeURIComponent(
               shift
             )}`
           );
-
-          if (!response.ok) {
-            console.error("Failed to fetch data");
+          if (!dataResponse.ok) {
+            console.error("Failed to fetch main data");
             return;
           }
-          const data = await response.json();
-          updateChart(data);
+          const data = await dataResponse.json();
+          updateChart(data, operation, line, shift);
+          fetchComparisonData(line, operation);
+        }
+
+        async function fetchComparisonData(line, operation, shift) {
+          const response = await fetch(
+            `https://p4data.onrender.com/comparisonData?line=${encodeURIComponent(
+              line
+            )}&operation=${encodeURIComponent(
+              operation
+            )}&shift=${encodeURIComponent(shift)}`
+          );
+          if (!response.ok) {
+            console.error("Failed to fetch comparison data");
+            return;
+          }
+          return await response.json();
+        }
+
+        function renderComparisonTable(data) {
+          let tableHTML =
+            "<table style='width:100%;'><tr><th>Line</th><th>Shift</th><th>High Quality</th><th>Medium Quality</th><th>Low Quality</th></tr>";
+          data.forEach((item) => {
+            tableHTML += `<tr><td>${item.line}</td><td>${item.shift}</td><td>${item.high}</td><td>${item.medium}</td><td>${item.low}</td></tr>`;
+          });
+          tableHTML += "</table>";
+          document.getElementById("comparisonTable").innerHTML = tableHTML;
         }
 
         document
@@ -254,9 +262,8 @@
             fetchData(operation, line, shift);
           });
 
-        fetchData("Final EL", "all", "all");
+        fetchData("Final EL", "Line-1", "A-Shift");
       });
     </script>
-
   </body>
 </html>
