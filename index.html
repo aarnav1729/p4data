@@ -1,181 +1,262 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dynamic Pie Chart</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
     <style>
-        @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;700&display=swap");
+      @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;700&display=swap");
 
-        body {
-            font-family: "IBM Plex Sans", sans-serif;
-            padding: 0;
-            box-sizing: border-box;
-            background-color: #f4f4f9;
-            color: #333;
-            margin: 0;
-            line-height: 1.6;
-        }
+      body {
+        font-family: "IBM Plex Sans", sans-serif;
+        padding: 0;
+        box-sizing: border-box;
+        background-color: #f4f4f9;
+        color: #333;
+        margin: 0;
+        line-height: 1.6;
+      }
 
+      h1 {
+        text-align: center;
+        margin-top: 20px;
+        margin-bottom: 20px;
+        font-size: 2rem; 
+        font-weight: 700;
+      }
+
+      .chart-container {
+        width: 90%;
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #fff;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+      }
+
+      canvas {
+        max-width: 100%;
+        height: auto;
+      }
+
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 20px;
+        margin-bottom: 20px;
+      }
+
+      .controls select,
+      .controls button {
+        padding: 10px 15px;
+        border-radius: 5px;
+        border: 2px solid #ccc;
+        background-color: #fff;
+        font-size: 1rem;
+        color: #333;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .controls button {
+        background-color: #4caf50;
+        color: white;
+        border: none;
+      }
+
+      .controls select:hover,
+      .controls button:hover {
+        border-color: #888;
+        background-color: #f8f8f8;
+      }
+
+      .controls button:hover {
+        background-color: #45a049;
+      }
+
+      .controls select:focus,
+      .controls button:focus {
+        outline: none;
+        border-color: #4caf50;
+      }
+
+      @media (max-width: 768px) {
         h1 {
-            text-align: center;
-            margin-top: 10px;
-            font-size: 2.5rem;
-            font-weight: 700;
-        }
-
-        .chart-container {
-            width: 90%;
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 20px;
-            background-color: #fff;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-            margin-bottom: 30px;
-        }
-
-        canvas {
-            max-width: 100%;
-            height: auto;
+          font-size: 1.5rem;
         }
 
         .controls {
-            margin-bottom: 20px;
+          flex-direction: column;
         }
 
-        .controls select {
-            margin-right: 10px;
+        .controls select,
+        .controls button {
+          width: 100%; 
+        }
+      }
+
+      @media (max-width: 480px) {
+        h1 {
+          font-size: 1.25rem;
         }
 
         .chart-container {
-            width: 90%;
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 20px;
-            background-color: #fff;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-            margin-bottom: 30px;
+          padding: 15px;
         }
+      }
     </style>
-</head>
+  </head>
 
-<body>
+  <body>
     <div class="chart-container">
-        <div class="controls">
-            <label for="operation">Inspection Process:</label>
-            <select id="operation">
-                <option value="Final EL">Final EL</option>
-                <option value="PI-90 Degree Visual Inspection">
-                    PI-90 Degree Visual Inspection
-                </option>
-            </select>
+      <div class="controls">
+        <label for="operation">Inspection Process:</label>
+        <select id="operation">
+          <option value="Final EL">Final EL</option>
+          <option value="PI-90 Degree Visual Inspection">
+            PI-90 Degree Visual Inspection
+          </option>
+        </select>
 
-            <label for="line">Line:</label>
-            <select id="line">
-                <option value="Line-1">Line 1</option>
-                <option value="Line-2">Line 2</option>
-                <option value="Line-3">Line 3</option>
-                <option value="all">All Lines</option>
-            </select>
+        <label for="line">Line:</label>
+        <select id="line">
+          <option value="Line-1">Line 1</option>
+          <option value="Line-2">Line 2</option>
+          <option value="Line-3">Line 3</option>
+          <option value="all">All Lines</option>
+        </select>
 
-            <label for="shift">Shift:</label>
-            <select id="shift">
-                <option value="A-Shift">Shift A</option>
-                <option value="B-Shift">Shift B</option>
-                <option value="C-Shift">Shift C</option>
-                <option value="all">All Shifts</option>
-            </select>
+        <label for="shift">Shift:</label>
+        <select id="shift">
+          <option value="A-Shift">Shift A</option>
+          <option value="B-Shift">Shift B</option>
+          <option value="C-Shift">Shift C</option>
+          <option value="all">All Shifts</option>
+        </select>
 
-            <button id="updateChart">Update Chart</button>
-        </div>
+        <button id="updateChart">Update Chart</button>
+      </div>
 
-        <canvas id="pieChart" width="400" height="400"></canvas>
+      <canvas id="pieChart" width="200" height="200"></canvas>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const ctx = document.getElementById('pieChart').getContext('2d');
-            let chart;
+      document.addEventListener("DOMContentLoaded", function () {
+        const ctx = document.getElementById("pieChart").getContext("2d");
+        let chart;
 
-            function updateChart(data) {
-                if (chart) {
-                    chart.destroy();
-                }
-                chart = new Chart(ctx, {
-                    type: 'pie',
-                    data: {
-                        labels: ['High Quality', 'Medium Quality', 'Low Quality'],
-                        datasets: [{
-                            data: [data.high, data.medium, data.low],
-                            backgroundColor: ['#57E162', '#FFD206', '#FD0900'],
-                            borderColor: '#2E302B'
-                        }]
+        function updateChart(data) {
+          if (chart) {
+            chart.destroy();
+          }
+
+          chart = new Chart(ctx, {
+            type: "pie",
+            data: {
+
+              labels: ["High Quality", "Medium Quality", "Low Quality"],
+              datasets: [
+                {
+                  data: [data.high, data.medium, data.low],
+                  backgroundColor: ["#57E162", "#FFD206", "#FD0900"],
+                  borderColor: "#F8DFAC",
+                  borderWidth: 1,
+                },
+              ],
+            },
+
+            options: {
+              responsive: true,
+              plugins: {
+                legend: {
+                  position: "top",
+                  labels: {
+                    font: {
+                      size: 16,
+                      weight: "bold",
                     },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                position: 'top',
-                            },
-                            title: {
-                                display: true,
-                                text: 'Quality Distribution'
-                            },
-                            datalabels: {
-                                color: '#fff',
-                                anchor: 'center',
-                                align: 'end',
-                                offset: (context) => {
-                                    return context.dataIndex * 15 + 10;
-                                },
-                                font: {
-                                    weight: 'bold',
-                                    size: 16
-                                },
-                                formatter: (value, ctx) => {
-                                    let sum = ctx.dataset.data.reduce((a, b) => a + b, 0);
-                                    let percentage = (value / sum * 100).toFixed(1) + "%";
-                                    return value + ' (' + percentage + ')';
-                                },
-                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                borderRadius: 4,
-                                borderWidth: 1,
-                                borderColor: '#fff',
-                                padding: 6,
-                                display: true 
-                            }
-                        }
+
+                    generateLabels: function (chart) {
+                      const dataset = chart.data.datasets[0];
+
+                      return chart.data.labels.map((label, index) => {
+                        const value = dataset.data[index];
+                        const sum = dataset.data.reduce((a, b) => a + b, 0);
+                        const percentage =
+                          ((value / sum) * 100).toFixed(1) + "%";
+
+                        return {
+                          text: `${label}: ${value} (${percentage})`,
+                          fillStyle: dataset.backgroundColor[index],
+                        };
+                      });
                     },
-                    plugins: [ChartDataLabels]
-                });
-            }
+                  },
+                },
+                datalabels: {
+                  color: "#333",
 
-            async function fetchData(operation, line, shift) {
-                const response = await fetch(`https://p4data.onrender.com/data?operation=${encodeURIComponent(operation)}&line=${encodeURIComponent(line)}&shift=${encodeURIComponent(shift)}`);
-                if (!response.ok) {
-                    console.error('Failed to fetch data');
-                    return;
-                }
-                const data = await response.json();
-                updateChart(data);
-            }
+                  anchor: "center",
 
-            document.getElementById('updateChart').addEventListener('click', function () {
-                const operation = document.getElementById('operation').value;
-                const line = document.getElementById('line').value;
-                const shift = document.getElementById('shift').value;
-                fetchData(operation, line, shift);
-            });
+                  align: (context) => {
+                    const label = context.chart.data.labels[context.dataIndex];
+                    return label === "Medium Quality" ? "center" : "start";
+                  },
 
-            fetchData('Final EL', 'all', 'all');
-        });
+                  offset: (context) => {
+                    const label = context.chart.data.labels[context.dataIndex];
+                    return label === "Medium Quality" ? -10 : 10;
+                  },
+
+                  font: {
+                    size: 16,
+                  },
+
+                  formatter: (value, ctx) => {
+                    let sum = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                    let percentage = ((value / sum) * 100).toFixed(1) + "%";
+                    return value + " (" + percentage + ")";
+                  },
+                },
+              },
+            },
+            plugins: [ChartDataLabels],
+          });
+        }
+
+        async function fetchData(operation, line, shift) {
+          const response = await fetch(
+            `https://p4data.onrender.com/data?operation=${encodeURIComponent(
+              operation
+            )}&line=${encodeURIComponent(line)}&shift=${encodeURIComponent(
+              shift
+            )}`
+          );
+
+          if (!response.ok) {
+            console.error("Failed to fetch data");
+            return;
+          }
+          const data = await response.json();
+          updateChart(data);
+        }
+
+        document
+          .getElementById("updateChart")
+          .addEventListener("click", function () {
+            const operation = document.getElementById("operation").value;
+            const line = document.getElementById("line").value;
+            const shift = document.getElementById("shift").value;
+            fetchData(operation, line, shift);
+          });
+
+        fetchData("Final EL", "all", "all");
+      });
     </script>
 
-</body>
-
+  </body>
 </html>
