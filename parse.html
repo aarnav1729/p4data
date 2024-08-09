@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Pie Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        .controls select {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <label for="operation">Inspection Process:</label>
+        <select id="operation">
+            <option value="Final EL">Final EL</option>
+            <option value="PI-90 Degree Visual Inspection">PI-90 Degree Visual Inspection</option>
+        </select>
+
+        <label for="line">Line:</label>
+        <select id="line">
+            <option value="Line-1">Line 1</option>
+            <option value="Line-2">Line 2</option>
+            <option value="Line-3">Line 3</option>
+            <option value="all">All Lines</option>
+        </select>
+
+        <label for="shift">Shift:</label>
+        <select id="shift">
+            <option value="A-Shift">Shift A</option>
+            <option value="B-Shift">Shift B</option>
+            <option value="C-Shift">Shift C</option>
+            <option value="all">All Shifts</option>
+        </select>
+
+        <button id="updateChart">Update Chart</button>
+    </div>
+
+    <canvas id="pieChart" width="400" height="400"></canvas>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const ctx = document.getElementById('pieChart').getContext('2d');
+            let chart;
+
+            // Function to update the chart with new data
+            function updateChart(data) {
+                if (chart) {
+                    chart.destroy();
+                }
+                chart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['High Quality', 'Medium Quality', 'Low Quality'],
+                        datasets: [{
+                            data: [data.high, data.medium, data.low],
+                            backgroundColor: ['#4caf50', '#ffeb3b', '#f44336']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            title: {
+                                display: true,
+                                text: 'Quality Distribution'
+                            }
+                        }
+                    }
+                });
+            }
+
+            async function fetchData(operation, line, shift) {
+                const response = await fetch(`http://localhost:3000/data?operation=${encodeURIComponent(operation)}&line=${encodeURIComponent(line)}&shift=${encodeURIComponent(shift)}`);
+                if (!response.ok) {
+                    console.error('Failed to fetch data');
+                    return;
+                }
+                const data = await response.json();
+                updateChart(data);
+            }
+
+            document.getElementById('updateChart').addEventListener('click', function () {
+                const operation = document.getElementById('operation').value;
+                const line = document.getElementById('line').value;
+                const shift = document.getElementById('shift').value;
+                fetchData(operation, line, shift);
+            });
+
+            // Initial chart load
+            fetchData('Final EL', 'all', 'all');
+        });
+    </script>
+</body>
+</html>
