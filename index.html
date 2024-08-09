@@ -1,28 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dynamic Pie Chart</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
         }
+
         .controls {
             margin-bottom: 20px;
         }
+
         .controls select {
             margin-right: 10px;
         }
     </style>
 </head>
+
 <body>
     <div class="controls">
         <label for="operation">Inspection Process:</label>
         <select id="operation">
             <option value="Final EL">Final EL</option>
-            <option value="PI-90 Degree Visual Inspection">PI-90 Degree Visual Inspection</option>
+            <option value="PI-90 Degree Visual Inspection">
+                PI-90 Degree Visual Inspection
+            </option>
         </select>
 
         <label for="line">Line:</label>
@@ -51,7 +58,6 @@
             const ctx = document.getElementById('pieChart').getContext('2d');
             let chart;
 
-            // Function to update the chart with new data
             function updateChart(data) {
                 if (chart) {
                     chart.destroy();
@@ -74,9 +80,34 @@
                             title: {
                                 display: true,
                                 text: 'Quality Distribution'
+                            },
+                            datalabels: {
+                                color: '#fff',
+                                anchor: 'center',
+                                align: 'end',
+                                offset: (context) => {
+                                    // Different offsets for each label to avoid overlap
+                                    return context.dataIndex * 15 + 10;
+                                },
+                                font: {
+                                    weight: 'bold',
+                                    size: 14
+                                },
+                                formatter: (value, ctx) => {
+                                    let sum = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                    let percentage = (value / sum * 100).toFixed(1) + "%";
+                                    return value + ' (' + percentage + ')';
+                                },
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                borderRadius: 4,
+                                borderWidth: 1,
+                                borderColor: '#fff',
+                                padding: 6,
+                                display: true  // Ensure all labels are always displayed
                             }
                         }
-                    }
+                    },
+                    plugins: [ChartDataLabels]
                 });
             }
 
@@ -101,5 +132,6 @@
             fetchData('Final EL', 'all', 'all');
         });
     </script>
+
 </body>
 </html>
