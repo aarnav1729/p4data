@@ -8,8 +8,39 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
     <style>
+        @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;700&display=swap");
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: "IBM Plex Sans", sans-serif;
+            padding: 0;
+            box-sizing: border-box;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .chart-container {
+            width: 90%;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
         }
 
         .controls {
@@ -19,39 +50,52 @@
         .controls select {
             margin-right: 10px;
         }
+
+        .chart-container {
+            width: 90%;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
     </style>
 </head>
 
 <body>
-    <div class="controls">
-        <label for="operation">Inspection Process:</label>
-        <select id="operation">
-            <option value="Final EL">Final EL</option>
-            <option value="PI-90 Degree Visual Inspection">
-                PI-90 Degree Visual Inspection
-            </option>
-        </select>
+    <div class="chart-container">
+        <div class="controls">
+            <label for="operation">Inspection Process:</label>
+            <select id="operation">
+                <option value="Final EL">Final EL</option>
+                <option value="PI-90 Degree Visual Inspection">
+                    PI-90 Degree Visual Inspection
+                </option>
+            </select>
 
-        <label for="line">Line:</label>
-        <select id="line">
-            <option value="Line-1">Line 1</option>
-            <option value="Line-2">Line 2</option>
-            <option value="Line-3">Line 3</option>
-            <option value="all">All Lines</option>
-        </select>
+            <label for="line">Line:</label>
+            <select id="line">
+                <option value="Line-1">Line 1</option>
+                <option value="Line-2">Line 2</option>
+                <option value="Line-3">Line 3</option>
+                <option value="all">All Lines</option>
+            </select>
 
-        <label for="shift">Shift:</label>
-        <select id="shift">
-            <option value="A-Shift">Shift A</option>
-            <option value="B-Shift">Shift B</option>
-            <option value="C-Shift">Shift C</option>
-            <option value="all">All Shifts</option>
-        </select>
+            <label for="shift">Shift:</label>
+            <select id="shift">
+                <option value="A-Shift">Shift A</option>
+                <option value="B-Shift">Shift B</option>
+                <option value="C-Shift">Shift C</option>
+                <option value="all">All Shifts</option>
+            </select>
 
-        <button id="updateChart">Update Chart</button>
+            <button id="updateChart">Update Chart</button>
+        </div>
+
+        <canvas id="pieChart" width="400" height="400"></canvas>
     </div>
-
-    <canvas id="pieChart" width="400" height="400"></canvas>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -68,7 +112,8 @@
                         labels: ['High Quality', 'Medium Quality', 'Low Quality'],
                         datasets: [{
                             data: [data.high, data.medium, data.low],
-                            backgroundColor: ['#4caf50', '#ffeb3b', '#f44336']
+                            backgroundColor: ['#57E162', '#FFD206', '#FD0900'],
+                            borderColor: '#2E302B'
                         }]
                     },
                     options: {
@@ -86,12 +131,11 @@
                                 anchor: 'center',
                                 align: 'end',
                                 offset: (context) => {
-                                    // Different offsets for each label to avoid overlap
                                     return context.dataIndex * 15 + 10;
                                 },
                                 font: {
                                     weight: 'bold',
-                                    size: 14
+                                    size: 16
                                 },
                                 formatter: (value, ctx) => {
                                     let sum = ctx.dataset.data.reduce((a, b) => a + b, 0);
@@ -103,7 +147,7 @@
                                 borderWidth: 1,
                                 borderColor: '#fff',
                                 padding: 6,
-                                display: true  // Ensure all labels are always displayed
+                                display: true 
                             }
                         }
                     },
@@ -112,7 +156,7 @@
             }
 
             async function fetchData(operation, line, shift) {
-                const response = await fetch(`http://localhost:3000/data?operation=${encodeURIComponent(operation)}&line=${encodeURIComponent(line)}&shift=${encodeURIComponent(shift)}`);
+                const response = await fetch(`https://p4data.onrender.com/data?operation=${encodeURIComponent(operation)}&line=${encodeURIComponent(line)}&shift=${encodeURIComponent(shift)}`);
                 if (!response.ok) {
                     console.error('Failed to fetch data');
                     return;
@@ -128,10 +172,10 @@
                 fetchData(operation, line, shift);
             });
 
-            // Initial chart load
             fetchData('Final EL', 'all', 'all');
         });
     </script>
 
 </body>
+
 </html>
