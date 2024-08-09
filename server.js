@@ -1,74 +1,77 @@
-const express = require('express');
-const fs = require('fs');
-const csv = require('csv-parser');
-const cors = require('cors'); // Import cors
+const express = require("express");
+const fs = require("fs");
+const csv = require("csv-parser");
+const cors = require("cors");
 
 const app = express();
 const PORT = 3000;
 
-// Enable CORS for all routes
 app.use(cors());
-
-// Serve static files from the current directory
 app.use(express.static(__dirname));
 
-// Endpoint to serve the parsed data
-app.get('/data', (req, res) => {
-    const filePath = 'sample.csv'; // Ensure this path is correct
-    const { operation, line, shift } = req.query;
+app.get("/data", (req, res) => {
+  const filePath = "sample.csv";
+  const { operation, line, shift } = req.query;
 
-    const qualityCounts = {
-        high: 0,
-        medium: 0,
-        low: 0
-    };
+  const qualityCounts = {
+    high: 0,
+    medium: 0,
+    low: 0,
+  };
 
-    console.log(`Filtering data for Operation: ${operation}, Line: ${line}, Shift: ${shift}`);
+  fs.createReadStream(filePath)
+    .pipe(csv())
+    .on("data", (row) => {
+      if (
+        row.Operation.trim() === operation &&
+        (line === "all" || row.Line.trim() === line) &&
+        (shift === "all" || row[shift])
+      ) {
+        incrementQualityCounts(row, shift, qualityCounts);
+      }
+    })
+    .on("end", () => {
+      res.json(qualityCounts);
+    });
+});
 
-    fs.createReadStream(filePath)
-        .pipe(csv())
-        .on('data', (row) => {
-            const {
-                Operation,
-                Line,
-                Category,
-                'A-Shift': A_Shift,
-                'B-Shift': B_Shift,
-                'C-Shift': C_Shift,
-            } = row;
+app.get("/comparisonData", (req, res) => {
+  const filePath = "sample.csv";
+  const { line, operation, shift } = req.query;
+  let comparisonData = [];
 
-            if (Operation.trim() === operation && (line === 'all' || Line.trim() === line)) {
-                console.log(`Processing row: Operation=${Operation}, Line=${Line}, Category=${Category}`);
-
-                const shifts = {
-                    'A-Shift': Number(A_Shift),
-                    'B-Shift': Number(B_Shift),
-                    'C-Shift': Number(C_Shift),
-                };
-
-                if (shift === 'all') {
-                    if (Category === 'OK') {
-                        qualityCounts.high += shifts['A-Shift'] + shifts['B-Shift'] + shifts['C-Shift'];
-                    } else if (Category === 'TOTAL M GRADE') {
-                        qualityCounts.medium += shifts['A-Shift'] + shifts['B-Shift'] + shifts['C-Shift'];
-                    } else if (Category === 'TOTAL L GRADE') {
-                        qualityCounts.low += shifts['A-Shift'] + shifts['B-Shift'] + shifts['C-Shift'];
-                    }
-                } else {
-                    if (Category === 'OK') {
-                        qualityCounts.high += shifts[shift];
-                    } else if (Category === 'TOTAL M GRADE') {
-                        qualityCounts.medium += shifts[shift];
-                    } else if (Category === 'TOTAL L GRADE') {
-                        qualityCounts.low += shifts[shift];
-                    }
-                }
-            }
-        })
-        .on('end', () => {
-            console.log('Final quality counts:', qualityCounts);
-            res.json(qualityCounts);
+  fs.createReadStream(filePath)
+    .pipe(csv())
+    .on("data", (row) => {
+      if (row.Operation.trim() === operation && row.Line.trim() !== line) {
+        comparisonData.push({
+          line: row.Line.trim(),
+          shift: row[shift] ? shift : "All Shifts",
+          high: row.Category === "OK" ? Number(row[shift]) : 0,
+          medium: row.Category === "TOTAL M GRADE" ? Number(row[shift]) : 0,
+          low: row.Category === "TOTAL L GRADE" ? Number(row[shift]) : 0,
         });
+      }
+    })
+    .on("end", () => {
+      res.json(comparisonData);
+    });
+});
+
+function incrementQualityCounts(row, shift, qualityCounts) {
+  ["A-Shift", "B-Shift", "C-Shift"].forEach((s) => {
+    if (shift === "all" || shift === s) {
+      qualityCounts.high += row.Category === "OK" ? Number(row[s]) : 0;
+      qualityCounts.medium +=
+        row.Category === "TOTAL M GRADE" ? Number(row[s]) : 0;
+      qualityCounts.low +=
+        row.Category === "TOTAL L GRADE" ? Number(row[s]) : 0;
+    }
+  });
+}
+
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
 });
 
 app.listen(PORT, () => {
