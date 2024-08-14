@@ -211,9 +211,9 @@
                 const calculatePercentage = (value) => ((value / total) * 100).toFixed(1);
 
                 chart.data = [
-                    { category: "High Quality", value: data.high, percentage: calculatePercentage(data.high), color: am4core.color("#57E162") },
-                    { category: "Medium Quality", value: data.medium, percentage: calculatePercentage(data.medium), color: am4core.color("#FFD206") },
-                    { category: "Low Quality", value: data.low, percentage: calculatePercentage(data.low), color: am4core.color("#FD0900") }
+                    { category: "High Quality", value: data.high, percentage: calculatePercentage(data.high), color: am4core.color("#789E38") },
+                    { category: "Medium Quality", value: data.medium, percentage: calculatePercentage(data.medium), color: am4core.color("#D5C67A") },
+                    { category: "Low Quality", value: data.low, percentage: calculatePercentage(data.low), color: am4core.color("#7A0311") }
                 ];
 
                 let series = chart.series.push(new am4charts.PieSeries3D());
