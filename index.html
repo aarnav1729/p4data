@@ -186,7 +186,7 @@
             const updateButton = document.getElementById("updateChart");
 
             async function fetchData(operation, line, shift) {
-                const response = await fetch(`http://localhost:3000/data?operation=${encodeURIComponent(operation)}&line=${encodeURIComponent(line)}&shift=${encodeURIComponent(shift)}`);
+                const response = await fetch(`https://p4data.onrender.com/data?operation=${encodeURIComponent(operation)}&line=${encodeURIComponent(line)}&shift=${encodeURIComponent(shift)}`);
                 const data = await response.json();
                 return data;
             }
