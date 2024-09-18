@@ -10,7 +10,7 @@
         html {
             overflow-x: hidden !important;
         }
-        
+
         body {
             font-family: "IBM Plex Sans", sans-serif;
             padding: 0;
@@ -151,100 +151,100 @@
 
 <body>
 
-<div class="controls">
-    <label for="operation">Inspection Process:</label>
-    <select id="operation">
-        <option value="Final EL">Final EL</option>
-        <option value="PI-90 Degree Visual Inspection">PI-90 Degree Visual Inspection</option>
-    </select>
+    <div class="controls">
+        <label for="operation">Inspection Process:</label>
+        <select id="operation">
+            <option value="Final EL">Final EL</option>
+            <option value="PI-90 Degree Visual Inspection">PI-90 Degree Visual Inspection</option>
+        </select>
 
-    <label for="line">Line:</label>
-    <select id="line">
-        <option value="Line-1">Line 1</option>
-        <option value="Line-2">Line 2</option>
-        <option value="Line-3">Line 3</option>
-        <option value="all">All Lines</option>
-    </select>
+        <label for="line">Line:</label>
+        <select id="line">
+            <option value="Line-1">Line 1</option>
+            <option value="Line-2">Line 2</option>
+            <option value="Line-3">Line 3</option>
+            <option value="all">All Lines</option>
+        </select>
 
-    <label for="shift">Shift:</label>
-    <select id="shift">
-        <option value="A-Shift">Shift A</option>
-        <option value="B-Shift">Shift B</option>
-        <option value="C-Shift">Shift C</option>
-        <option value="all">All Shifts</option>
-    </select>
+        <label for="shift">Shift:</label>
+        <select id="shift">
+            <option value="A-Shift">Shift A</option>
+            <option value="B-Shift">Shift B</option>
+            <option value="C-Shift">Shift C</option>
+            <option value="all">All Shifts</option>
+        </select>
 
-    <button id="updateChart">Update Chart</button>
-</div>
+        <button id="updateChart">Update Chart</button>
+    </div>
 
-<div id="chartdiv" class="chart-container"></div>
+    <div id="chartdiv" class="chart-container"></div>
 
-<div id="deviationTable" class="chart-container"></div>
+    <div id="deviationTable" class="chart-container"></div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        am4core.ready(function () {
-            am4core.useTheme(am4themes_animated);
-            let chart;
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            am4core.ready(function () {
+                am4core.useTheme(am4themes_animated);
+                let chart;
 
-            const operationSelect = document.getElementById("operation");
-            const lineSelect = document.getElementById("line");
-            const shiftSelect = document.getElementById("shift");
-            const updateButton = document.getElementById("updateChart");
+                const operationSelect = document.getElementById("operation");
+                const lineSelect = document.getElementById("line");
+                const shiftSelect = document.getElementById("shift");
+                const updateButton = document.getElementById("updateChart");
 
-            async function fetchData(operation, line, shift) {
-                const response = await fetch(`http://localhost:3000/data?operation=${encodeURIComponent(operation)}&line=${encodeURIComponent(line)}&shift=${encodeURIComponent(shift)}`);
-                const data = await response.json();
-                return data;
-            }
-
-            function updateChart(data) {
-                if (chart) {
-                    chart.dispose();
+                async function fetchData(operation, line, shift) {
+                    const response = await fetch(`http://localhost:3000/data?operation=${encodeURIComponent(operation)}&line=${encodeURIComponent(line)}&shift=${encodeURIComponent(shift)}`);
+                    const data = await response.json();
+                    return data;
                 }
 
-                chart = am4core.create("chartdiv", am4charts.PieChart3D);
-                chart.hiddenState.properties.opacity = 0;
-                chart.legend = new am4charts.Legend();
+                function updateChart(data) {
+                    if (chart) {
+                        chart.dispose();
+                    }
 
-                const total = data.high + data.medium + data.low;
-                const calculatePercentage = (value) => ((value / total) * 100).toFixed(1);
+                    chart = am4core.create("chartdiv", am4charts.PieChart3D);
+                    chart.hiddenState.properties.opacity = 0;
+                    chart.legend = new am4charts.Legend();
 
-                chart.data = [
-                    { category: "High Quality", value: data.high, percentage: calculatePercentage(data.high), color: am4core.color("#789E38") },
-                    { category: "Medium Quality", value: data.medium, percentage: calculatePercentage(data.medium), color: am4core.color("#D5C67A") },
-                    { category: "Low Quality", value: data.low, percentage: calculatePercentage(data.low), color: am4core.color("#7A0311") }
-                ];
+                    const total = data.high + data.medium + data.low;
+                    const calculatePercentage = (value) => ((value / total) * 100).toFixed(1);
 
-                let series = chart.series.push(new am4charts.PieSeries3D());
-                series.dataFields.value = "value";
-                series.dataFields.category = "category";
-                series.slices.template.propertyFields.fill = "color";
+                    chart.data = [
+                        { category: "High Quality", value: data.high, percentage: calculatePercentage(data.high), color: am4core.color("#789E38") },
+                        { category: "Medium Quality", value: data.medium, percentage: calculatePercentage(data.medium), color: am4core.color("#D5C67A") },
+                        { category: "Low Quality", value: data.low, percentage: calculatePercentage(data.low), color: am4core.color("#7A0311") }
+                    ];
 
-                series.slices.template.adapter.add("tooltipText", function (text, target) {
-                    return `${target.dataItem.category}: {value} ({percentage}%)`;
-                });
+                    let series = chart.series.push(new am4charts.PieSeries3D());
+                    series.dataFields.value = "value";
+                    series.dataFields.category = "category";
+                    series.slices.template.propertyFields.fill = "color";
 
-                // Adjust label position and font size based on screen size
-                series.labels.template.adapter.add("radius", function (radius, target) {
-                    return window.innerWidth < 768 ? -30 : -60;
-                });
-                series.labels.template.adapter.add("fontSize", function (size, target) {
-                    return window.innerWidth < 768 ? 12 : 14;
-                });
-                series.labels.template.adapter.add("text", function (text, target) {
-                    return `{category}: {value} ({percentage}%)`;
-                });
-                series.labels.template.wrap = true;
-                series.labels.template.maxWidth = window.innerWidth < 768 ? 150 : 300;
+                    series.slices.template.adapter.add("tooltipText", function (text, target) {
+                        return `${target.dataItem.category}: {value} ({percentage}%)`;
+                    });
 
-                // Update the deviation table
-                updateDeviationTable(chart.data);
-            }
+                    // Adjust label position and font size based on screen size
+                    series.labels.template.adapter.add("radius", function (radius, target) {
+                        return window.innerWidth < 768 ? -30 : -60;
+                    });
+                    series.labels.template.adapter.add("fontSize", function (size, target) {
+                        return window.innerWidth < 768 ? 12 : 14;
+                    });
+                    series.labels.template.adapter.add("text", function (text, target) {
+                        return `{category}: {value} ({percentage}%)`;
+                    });
+                    series.labels.template.wrap = true;
+                    series.labels.template.maxWidth = window.innerWidth < 768 ? 150 : 300;
 
-            function updateDeviationTable(chartData) {
-                const goals = { "High Quality": 96, "Medium Quality": 3, "Low Quality": 1 };
-                let tableHTML = `
+                    // Update the deviation table
+                    updateDeviationTable(chart.data);
+                }
+
+                function updateDeviationTable(chartData) {
+                    const goals = { "High Quality": 96, "Medium Quality": 3, "Low Quality": 1 };
+                    let tableHTML = `
                     <table>
                         <tr>
                             <th>Category</th>
@@ -253,35 +253,35 @@
                             <th>Deviation %</th>
                         </tr>`;
 
-                chartData.forEach(item => {
-                    const deviation = (item.percentage - goals[item.category]).toFixed(1);
-                    tableHTML += `
+                    chartData.forEach(item => {
+                        const deviation = (item.percentage - goals[item.category]).toFixed(1);
+                        tableHTML += `
                         <tr>
                             <td>${item.category}</td>
                             <td>${item.percentage}%</td>
                             <td>${goals[item.category]}%</td>
                             <td>${deviation}%</td>
                         </tr>`;
+                    });
+
+                    tableHTML += `</table>`;
+                    document.getElementById("deviationTable").innerHTML = tableHTML;
+                }
+
+                updateButton.addEventListener("click", async function () {
+                    const operation = operationSelect.value;
+                    const line = lineSelect.value;
+                    const shift = shiftSelect.value;
+
+                    const chartData = await fetchData(operation, line, shift);
+                    updateChart(chartData);
                 });
 
-                tableHTML += `</table>`;
-                document.getElementById("deviationTable").innerHTML = tableHTML;
-            }
-
-            updateButton.addEventListener("click", async function () {
-                const operation = operationSelect.value;
-                const line = lineSelect.value;
-                const shift = shiftSelect.value;
-
-                const chartData = await fetchData(operation, line, shift);
-                updateChart(chartData);
+                // Initial load
+                updateButton.click();
             });
-
-            // Initial load
-            updateButton.click();
         });
-    });
-</script>
+    </script>
 
 
 </body>
