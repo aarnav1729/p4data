@@ -11,7 +11,7 @@ app.use(express.static(__dirname));
 
 // Endpoint to serve the parsed data
 app.get("/data", (req, res) => {
-    const filePath = "sample.csv";
+    const filePath = "extracted_data.csv";
     const { operation, line, shift } = req.query;
 
     const qualityCounts = {
