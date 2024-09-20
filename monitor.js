@@ -1,6 +1,7 @@
 const { google } = require("googleapis");
 const fs = require("fs");
 const csvWriter = require("csv-write-stream");
+const csv = require("csv-parser");
 
 // Gmail API credentials
 const CLIENT_ID =
@@ -15,6 +16,31 @@ const OUTPUT_FILE = "extract.csv";
 // Create an OAuth2 client directly with the provided credentials
 const oAuth2Client = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET);
 oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
+
+// Variables to store the current day and sequence number
+let currentDay = new Date().getDate();
+let seqCounter = 1; // Global SeqNbr counter
+
+// Function to initialize the sequence number based on existing data
+function initializeSeqCounter() {
+  if (fs.existsSync(OUTPUT_FILE) && fs.statSync(OUTPUT_FILE).size > 0) {
+    let maxSeqNbr = 0;
+    fs.createReadStream(OUTPUT_FILE)
+      .pipe(csv())
+      .on("data", (row) => {
+        const seqNbr = parseInt(row.SeqNbr, 10);
+        if (seqNbr > maxSeqNbr) {
+          maxSeqNbr = seqNbr;
+        }
+      })
+      .on("end", () => {
+        seqCounter = maxSeqNbr + 1; // Set the sequence counter based on the highest SeqNbr in the file
+        console.log(`SeqNbr initialized to ${seqCounter}`);
+      });
+  } else {
+    console.log(`SeqNbr initialized to ${seqCounter}`);
+  }
+}
 
 /**
  * Ensures that the access token is refreshed automatically when expired.
@@ -34,6 +60,16 @@ function watchInbox() {
   const gmail = google.gmail({ version: "v1", auth: oAuth2Client });
 
   setInterval(() => {
+    const today = new Date().getDate();
+
+    // Reset the file and sequence number if it's a new day
+    if (today !== currentDay) {
+      currentDay = today;
+      seqCounter = 1; // Reset the sequence number at the start of the day
+      console.log("A new day has started. Overwriting the file.");
+      fs.writeFileSync(OUTPUT_FILE, ""); // Overwrite the file at the start of the day
+    }
+
     gmail.users.messages.list(
       {
         userId: "me",
@@ -120,52 +156,80 @@ function extractTableDataFromText(textBody) {
   }
 
   // Prepare the CSV writer with appropriate headers
-  const writer = csvWriter({
-    headers: [
-      "SeqNbr",
-      "Operation",
-      "Line",
-      "Category",
-      "A-Shift",
-      "B-Shift",
-      "C-Shift",
-      "A+B+C Shift",
-      "% - Percentage",
-    ],
-  });
-  writer.pipe(fs.createWriteStream(OUTPUT_FILE));
+  let writer;
+  const isFileEmpty =
+    !fs.existsSync(OUTPUT_FILE) || fs.statSync(OUTPUT_FILE).size === 0;
 
-  // Improved regex to handle complex "Operation" fields like "PI-90 Degree Visual Inspection"
-  lines.forEach((line, index) => {
-    console.log("Processing line:", line);
+  // Always open the file in append mode
+  writer = csvWriter({ sendHeaders: isFileEmpty }); // sendHeaders only if file is empty
+  writer.pipe(fs.createWriteStream(OUTPUT_FILE, { flags: "a" }));
 
-    // Match all necessary columns with more flexibility for longer operation names
-    const columns = line.match(
-      /^(\d+(\.\d{2})?)\s+([A-Za-z0-9\s-]+)\s+(Line-\d+)\s+([A-Za-z\s\(\)+]+)\s+([\d,.]+)\s+([\d,.]+)\s+([\d,.]+)\s+([\d,.]+)\s+([\d,.]+)/
-    );
+  // Parse each line using the new parsing function
+  lines.forEach((line) => {
+    const parsedLine = parseLine(line);
+    if (parsedLine) {
+      // Assign your own sequential counter
+      parsedLine.SeqNbr = seqCounter++;
 
-    if (columns && columns.length === 11) {
-      writer.write({
-        SeqNbr: columns[1],
-        Operation: columns[3].trim(),
-        Line: columns[4],
-        Category: columns[5].trim(),
-        "A-Shift": columns[6].replace(",", ""),
-        "B-Shift": columns[7].replace(",", ""),
-        "C-Shift": columns[8].replace(",", ""),
-        "A+B+C Shift": columns[9].replace(",", ""),
-        "% - Percentage": columns[10].replace(",", ""),
-      });
-    } else {
-      console.log(
-        `Skipping line ${index + 1} due to unexpected format: ${line}`
-      );
+      // Write the parsed line to CSV
+      writer.write(parsedLine);
     }
   });
 
-  writer.end();
-  console.log("Table data extracted and saved to extract.csv");
+  writer.end(() => {
+    console.log("Table data extracted and saved to extract.csv");
+  });
+}
+
+// Function to parse a line of the table
+function parseLine(line) {
+  // Split the line into tokens
+  const tokens = line.trim().split(/\s+/);
+
+  // If the line has less than the expected number of tokens, skip it
+  if (tokens.length < 8) {
+    return null;
+  }
+
+  // Extract the last five tokens as the numeric columns
+  const percentage = tokens.pop();
+  const aPlusBPlusCShift = tokens.pop();
+  const cShift = tokens.pop();
+  const bShift = tokens.pop();
+  const aShift = tokens.pop();
+
+  // Now, find the index of the token that matches Line-\d+
+  const lineIndex = tokens.findIndex((token) => /^Line-\d+$/.test(token));
+
+  if (lineIndex === -1) {
+    return null; // Can't find Line-\d+, skip this line
+  }
+
+  // The first token is SeqNbr from the email, which we'll ignore
+  // Operation is tokens[1] up to (but not including) lineIndex
+  const operationTokens = tokens.slice(1, lineIndex);
+  const operation = operationTokens.join(" ");
+
+  // Line is tokens[lineIndex]
+  const lineField = tokens[lineIndex];
+
+  // Category is tokens from lineIndex+1 up to the end
+  const categoryTokens = tokens.slice(lineIndex + 1);
+  const category = categoryTokens.join(" ");
+
+  return {
+    SeqNbr: null, // Will be overwritten with seqCounter
+    Operation: operation,
+    Line: lineField,
+    Category: category,
+    "A-Shift": aShift.replace(/,/g, ""),
+    "B-Shift": bShift.replace(/,/g, ""),
+    "C-Shift": cShift.replace(/,/g, ""),
+    "A+B+C Shift": aPlusBPlusCShift.replace(/,/g, ""),
+    "% - Percentage": percentage,
+  };
 }
 
 // Start the inbox monitoring process
+initializeSeqCounter(); // Initialize seqCounter before starting inbox watch
 watchInbox();
