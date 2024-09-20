@@ -252,7 +252,7 @@
 
         async function fetchData1(operation, line, shift) {
           const response = await fetch(
-            `http://localhost:3000/data?operation=${encodeURIComponent(
+            `https://p4data.onrender.com/data?operation=${encodeURIComponent(
               operation
             )}&line=${encodeURIComponent(line)}&shift=${encodeURIComponent(
               shift
@@ -374,7 +374,7 @@
 
         async function fetchData2(operation, line, shift) {
           const response = await fetch(
-            `http://localhost:3000/data?operation=${encodeURIComponent(
+            `https://p4data.onrender.com/data?operation=${encodeURIComponent(
               operation
             )}&line=${encodeURIComponent(line)}&shift=${encodeURIComponent(
               shift
