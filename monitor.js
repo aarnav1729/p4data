@@ -30,7 +30,7 @@ const emailConfigs = [
   },
   {
     subject:
-      'MES PEPPL Module - Quality - 90 Degree Visual & Final EL - Hourly - Defect Rate Status', // Ensure this matches exactly
+      'MES PEPPL - Quality - 90 Degree Visual & Final EL - Hourly - Defect Rate Status', // Ensure this matches exactly
     dailyOutputFile: 'extract2.csv',
     cumulativeOutputFile: 'cumulative2.csv',
     dailySeqCounter: 1,
