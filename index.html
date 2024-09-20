@@ -1,492 +1,615 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>QA Data Insights</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qmap</title>
 
-  <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
 
-  <style>
-    html {
-      overflow-x: hidden !important;
-    }
+    <link rel="icon" type="image/svg+xml" href="qm.png">
 
-    body {
-      font-family: "IBM Plex Sans", sans-serif;
-      padding: 0;
-      margin: 0;
-      background-color: #f4f4f9;
-      color: #333;
-      line-height: 1.6;
-      overflow-x: hidden !important;
-    }
+    <style>
+        html {
+            overflow-x: hidden !important;
+        }
 
-    #chartdiv,
-    #chartdiv2 {
-      width: 100%;
-      height: 500px;
-      overflow-x: hidden !important;
-    }
+        body {
+            font-family: "IBM Plex Sans", sans-serif;
+            padding: 0;
+            margin: 0;
+            background-color: #f4f4f9;
+            color: #333;
+            line-height: 1.6;
+            overflow-x: hidden !important;
+        }
 
-    .controls {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
-      margin-top: 20px;
-      gap: 20px;
-      padding: 0 10px;
-    }
+        #chartdiv,
+        #chartdiv2,
+        #chartdiv3,
+        #chartdiv4 {
+            width: 100%;
+            height: 500px;
+            overflow-x: hidden !important;
+        }
 
-    .controls select,
-    .controls button {
-      padding: 10px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-      background-color: #fff;
-      font-size: 1rem;
-      cursor: pointer;
-      flex: 1;
-      min-width: 120px;
-      max-width: 200px;
-    }
+        .controls {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            margin-top: 20px;
+            gap: 20px;
+            padding: 0 10px;
+        }
 
-    .controls button {
-      background-color: #4caf50;
-      color: white;
-      border: none;
-      max-width: 150px;
-    }
+        .controls select,
+        .controls button {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+            flex: 1;
+            min-width: 120px;
+            max-width: 200px;
+        }
 
-    #deviationTable,
-    #deviationTable2 {
-      width: 90%;
-      max-width: 800px;
-      margin: 20px auto;
-      padding: 20px;
-      background-color: #fff;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      border-radius: 8px;
-      overflow-x: hidden;
-    }
+        .controls button {
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            max-width: 150px;
+        }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      table-layout: fixed;
-    }
+        #deviationTable,
+        #deviationTable2,
+        #deviationTable3,
+        #deviationTable4 {
+            width: 100%;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow-x: hidden;
+        }
 
-    th,
-    td {
-      padding: 10px;
-      text-align: center;
-      border-bottom: 1px solid #ccc;
-      white-space: nowrap;
-    }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
 
-    .chart-container {
-      width: 90%;
-      max-width: 800px;
-      margin: 20px auto;
-      padding: 20px;
-      background-color: #fff;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      border-radius: 8px;
-      overflow: hidden;
-    }
+        th,
+        td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid #ccc;
+            white-space: nowrap;
+        }
 
-    @media (max-width: 768px) {
-      h1 {
-        font-size: 1.5rem;
-      }
+        .chart-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
 
-      .controls {
-        flex-direction: column;
-        gap: 10px;
-      }
+        .charts-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 20px;
+        }
 
-      .controls select,
-      .controls button {
-        width: 100%;
-        max-width: none;
-      }
+        .chart-wrapper {
+            flex: 1 1 48%;
+            min-width: 300px;
+        }
 
-      #chartdiv,
-      #chartdiv2 {
-        height: 400px;
-      }
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.5rem;
+            }
 
-      .chart-container {
-        padding: 15px;
-      }
+            .controls {
+                flex-direction: column;
+                gap: 10px;
+            }
 
-      th,
-      td {
-        padding: 8px;
-      }
-    }
+            #chartdiv,
+            #chartdiv2,
+            #chartdiv3,
+            #chartdiv4 {
+                height: 400px;
+            }
 
-    @media (max-width: 480px) {
-      h1 {
-        font-size: 1.25rem;
-      }
+            .chart-container {
+                padding: 15px;
+            }
 
-      .controls {
-        flex-direction: column;
-        gap: 10px;
-      }
+            th,
+            td {
+                padding: 8px;
+            }
 
-      #chartdiv,
-      #chartdiv2 {
-        height: 300px;
-      }
+            .chart-wrapper {
+                flex: 1 1 100%;
+            }
+        }
 
-      th,
-      td {
-        padding: 6px;
-      }
-    }
-  </style>
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.25rem;
+            }
 
-  <script src="https://cdn.amcharts.com/lib/4/core.js"></script>
-  <script src="https://cdn.amcharts.com/lib/4/charts.js"></script>
-  <script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
+            .controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            #chartdiv,
+            #chartdiv2,
+            #chartdiv3,
+            #chartdiv4 {
+                height: 300px;
+            }
+
+            th,
+            td {
+                padding: 6px;
+            }
+        }
+    </style>
+
+    <script src="https://cdn.amcharts.com/lib/4/core.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/charts.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
 </head>
 
 <body>
-  <!-- Navigation Bar -->
-  <nav class="bg-gradient-to-l from-pink-100 to-sky-100 border-b border-black">
-    <div class="max-w-6xl">
-      <div class="flex justify-between items-center h-20">
-        <div class="flex-shrink-0">
-          <a href="#">
-            <img src="QMAP.png" alt="CAT Logo" class="h-48 w-48" style="top: 0; left: 0; background-color: transparent" />
-          </a>
+    <main class="bg-gradient-to-r from-pink-100 to-sky-100">
+        <!-- Navigation Bar -->
+        <nav class="bg-gradient-to-r from-pink-100 to-sky-100 border-b border-black">
+            <div class="max-w-6xl">
+                <div class="flex justify-between items-center h-20">
+                    <div class="flex-shrink-0">
+                        <a href="#">
+                            <img src="QMAP.png" alt="CAT Logo" class="h-48 w-48"
+                                style="top: 0; left: 0; background-color: transparent" />
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="bg-gradient-to-r from-pink-100 to-sky-100 mt-2">
+            <!-- PEIPL Section -->
+            <section class="p-2 border border-black rounded-lg mr-3 ml-3 mb-3 bg-transparent">
+
+                <h1
+                    class="font-bold text-2xl text-black items-center text-center bg-gradient-to-r from-pink-100 to-sky-100 p-3">
+                    PEIPL
+                </h1>
+                <div class="charts-row mt-2">
+                    <!-- Daily Chart 1 -->
+                    <div class="chart-wrapper border border-black rounded-lg p-2">
+                        <h2
+                            class="text-xl text-center mb-2 font-bold text-black bg-gradient-to-l from-pink-100 to-sky-100 rounded-lg border-b border-black p-2">
+                            Daily</h2>
+                        <div class="controls">
+                            <label for="operation1">Inspection Process:</label>
+                            <select id="operation1">
+                                <option value="Final EL">Final EL</option>
+                                <option value="PI-90 Degree Visual Inspection">
+                                    PI-90 Degree Visual Inspection
+                                </option>
+                            </select>
+
+                            <label for="line1">Line:</label>
+                            <select id="line1">
+                                <option value="Line-1">Line 1</option>
+                                <option value="Line-2">Line 2</option>
+                                <option value="Line-3">Line 3</option>
+                                <option value="all">All Lines</option>
+                            </select>
+
+                            <label for="shift1">Shift:</label>
+                            <select id="shift1">
+                                <option value="A-Shift">Shift A</option>
+                                <option value="B-Shift">Shift B</option>
+                                <option value="C-Shift">Shift C</option>
+                                <option value="all">All Shifts</option>
+                            </select>
+
+                            <button id="updateChart1">Update Chart</button>
+                        </div>
+
+                        <div id="chartdiv" class="chart-container"></div>
+
+                        <div id="deviationTable" class="chart-container"></div>
+                    </div>
+
+                    <!-- Cumulative Chart 1 -->
+                    <div class="chart-wrapper border border-black rounded-lg p-2">
+                        <h2
+                            class="text-xl text-center mb-2 font-bold text-black bg-gradient-to-l from-pink-100 to-sky-100 rounded-lg border-b border-black p-2">
+                            Cumulative</h2>
+                        <div class="controls">
+                            <label for="operation3">Inspection Process:</label>
+                            <select id="operation3">
+                                <option value="Final EL">Final EL</option>
+                                <option value="PI-90 Degree Visual Inspection">
+                                    PI-90 Degree Visual Inspection
+                                </option>
+                            </select>
+
+                            <label for="line3">Line:</label>
+                            <select id="line3">
+                                <option value="Line-1">Line 1</option>
+                                <option value="Line-2">Line 2</option>
+                                <option value="Line-3">Line 3</option>
+                                <option value="all">All Lines</option>
+                            </select>
+
+                            <label for="shift3">Shift:</label>
+                            <select id="shift3">
+                                <option value="A-Shift">Shift A</option>
+                                <option value="B-Shift">Shift B</option>
+                                <option value="C-Shift">Shift C</option>
+                                <option value="all">All Shifts</option>
+                            </select>
+
+                            <button id="updateChart3">Update Chart</button>
+                        </div>
+
+                        <div id="chartdiv3" class="chart-container"></div>
+
+                        <div id="deviationTable3" class="chart-container"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PEPPL Section -->
+            <section class="p-2 border border-black rounded-lg mt-2 mr-3 ml-3 mb-3 bg-transparent">
+                <h1
+                    class="font-bold text-2xl text-black items-center text-center bg-gradient-to-r from-pink-100 to-sky-100 rounded-lg ml-3 mr-3 p-3">
+                    PEPPL
+                </h1>
+                <div class="charts-row mt-2">
+                    <!-- Daily Chart 2 -->
+                    <div class="chart-wrapper border border-black rounded-lg p-2">
+                        <h2
+                            class="text-xl font-bold text-black text-center mb-2 bg-gradient-to-l from-pink-100 to-sky-100 rounded-lg border-b border-black p-2">
+                            Daily</h2>
+                        <div class="controls">
+                            <label for="operation2">Inspection Process:</label>
+                            <select id="operation2">
+                                <option value="Final EL">Final EL</option>
+                                <option value="PI-90 Degree Visual Inspection">
+                                    PI-90 Degree Visual Inspection
+                                </option>
+                            </select>
+
+                            <label for="line2">Line:</label>
+                            <select id="line2">
+                                <option value="Line-1">Line 1</option>
+                                <option value="Line-2">Line 2</option>
+                                <option value="Line-3">Line 3</option>
+                                <option value="all">All Lines</option>
+                            </select>
+
+                            <label for="shift2">Shift:</label>
+                            <select id="shift2">
+                                <option value="A-Shift">Shift A</option>
+                                <option value="B-Shift">Shift B</option>
+                                <option value="C-Shift">Shift C</option>
+                                <option value="all">All Shifts</option>
+                            </select>
+
+                            <button id="updateChart2">Update Chart</button>
+                        </div>
+
+                        <div id="chartdiv2" class="chart-container"></div>
+
+                        <div id="deviationTable2" class="chart-container"></div>
+                    </div>
+
+                    <!-- Cumulative Chart 2 -->
+                    <div class="chart-wrapper border border-black rounded-lg p-2">
+                        <h2
+                            class="text-xl text-center mb-2 font-bold text-black bg-gradient-to-l from-pink-100 to-sky-100 rounded-lg border-b border-black p-2">
+                            Cumulative</h2>
+                        <div class="controls">
+                            <label for="operation4">Inspection Process:</label>
+                            <select id="operation4">
+                                <option value="Final EL">Final EL</option>
+                                <option value="PI-90 Degree Visual Inspection">
+                                    PI-90 Degree Visual Inspection
+                                </option>
+                            </select>
+
+                            <label for="line4">Line:</label>
+                            <select id="line4">
+                                <option value="Line-1">Line 1</option>
+                                <option value="Line-2">Line 2</option>
+                                <option value="Line-3">Line 3</option>
+                                <option value="all">All Lines</option>
+                            </select>
+
+                            <label for="shift4">Shift:</label>
+                            <select id="shift4">
+                                <option value="A-Shift">Shift A</option>
+                                <option value="B-Shift">Shift B</option>
+                                <option value="C-Shift">Shift C</option>
+                                <option value="all">All Shifts</option>
+                            </select>
+
+                            <button id="updateChart4">Update Chart</button>
+                        </div>
+
+                        <div id="chartdiv4" class="chart-container"></div>
+
+                        <div id="deviationTable4" class="chart-container"></div>
+                    </div>
+                </div>
+            </section>
         </div>
-      </div>
-    </div>
-  </nav>
+    </main>
 
-  <!-- First Pie Chart Section -->
-  <section class="p-2 border border-black rounded-lg mt-2 mr-3 ml-3 mb-3">
-    <h1 class="font-bold text-2xl text-black items-center text-center bg-gradient-to-r from-pink-200 to-sky-200 border p-3 border-black rounded-lg ml-3 mr-3">PEIPL</h1>
-    <div class="controls">
-      <label for="operation">Inspection Process:</label>
-      <select id="operation">
-        <option value="Final EL">Final EL</option>
-        <option value="PI-90 Degree Visual Inspection">PI-90 Degree Visual Inspection</option>
-      </select>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            am4core.ready(function () {
+                am4core.useTheme(am4themes_animated);
 
-      <label for="line">Line:</label>
-      <select id="line">
-        <option value="Line-1">Line 1</option>
-        <option value="Line-2">Line 2</option>
-        <option value="Line-3">Line 3</option>
-        <option value="all">All Lines</option>
-      </select>
+                // Function to initialize a chart
+                function initializeChart(
+                    chartId,
+                    deviationTableId,
+                    dataset,
+                    operationSelectId,
+                    lineSelectId,
+                    shiftSelectId,
+                    updateButtonId,
+                    goals
+                ) {
+                    let chart;
 
-      <label for="shift">Shift:</label>
-      <select id="shift">
-        <option value="A-Shift">Shift A</option>
-        <option value="B-Shift">Shift B</option>
-        <option value="C-Shift">Shift C</option>
-        <option value="all">All Shifts</option>
-      </select>
+                    const operationSelect = document.getElementById(operationSelectId);
+                    const lineSelect = document.getElementById(lineSelectId);
+                    const shiftSelect = document.getElementById(shiftSelectId);
+                    const updateButton = document.getElementById(updateButtonId);
 
-      <button id="updateChart" class="hover:bg-green-600">Update Chart</button>
-    </div>
+                    async function fetchData(operation, line, shift) {
+                        try {
+                            const response = await fetch(
+                                `https://p4data.onrender.com/data?operation=${encodeURIComponent(
+                                    operation
+                                )}&line=${encodeURIComponent(
+                                    line
+                                )}&shift=${encodeURIComponent(shift)}&dataset=${dataset}`
+                            );
 
-    <div id="chartdiv" class="chart-container"></div>
+                            console.log(
+                                `Fetching data from https://p4data.onrender.com/data endpoint with dataset=${dataset}`
+                            );
 
-    <div id="deviationTable" class="chart-container"></div>
-  </section>
+                            if (!response.ok) {
+                                throw new Error(
+                                    `Network response was not ok: ${response.statusText}`
+                                );
+                            }
+                            const data = await response.json();
+                            console.log(`Fetched data for dataset ${dataset}:`, data);
+                            return data;
+                        } catch (error) {
+                            console.error("Error fetching data:", error);
+                            return { high: 0, medium: 0, low: 0 };
+                        }
+                    }
 
-  <!-- Second Pie Chart Section -->
-  <section class="p-2 border border-black rounded-lg mt-2 mr-3 ml-3 mb-3">
-    <h1 class="font-bold text-2xl text-black items-center text-center bg-gradient-to-r from-pink-200 to-sky-200 border p-3 border-black rounded-lg ml-3 mr-3">PEPPL</h1>
-    <div class="controls">
-      <label for="operation2">Inspection Process:</label>
-      <select id="operation2">
-        <!-- Options specific to the second dataset -->
-        <option value="Final EL">Final EL</option>
-        <option value="PI-90 Degree Visual Inspection">PI-90 Degree Visual Inspection</option>
-      </select>
 
-      <label for="line2">Line:</label>
-      <select id="line2">
-        <option value="Line-1">Line 1</option>
-        <option value="Line-2">Line 2</option>
-        <option value="Line-3">Line 3</option>
-        <option value="all">All Lines</option>
-      </select>
+                    function updateChart(data) {
+                        if (chart) {
+                            chart.dispose();
+                        }
 
-      <label for="shift2">Shift:</label>
-      <select id="shift2">
-        <option value="A-Shift">Shift A</option>
-        <option value="B-Shift">Shift B</option>
-        <option value="C-Shift">Shift C</option>
-        <option value="all">All Shifts</option>
-      </select>
+                        if (data.high + data.medium + data.low === 0) {
+                            console.warn(`No data available for chart ${chartId}.`);
+                            document.getElementById(chartId).innerHTML =
+                                "<p class='text-center text-red-500'>No data available.</p>";
+                            document.getElementById(deviationTableId).innerHTML = "";
+                            return;
+                        }
 
-      <button id="updateChart2" class="bg:green-600">Update Chart</button>
-    </div>
+                        chart = am4core.create(chartId, am4charts.PieChart3D);
+                        chart.hiddenState.properties.opacity = 0;
+                        chart.legend = new am4charts.Legend();
 
-    <div id="chartdiv2" class="chart-container"></div>
+                        const total = data.high + data.medium + data.low;
+                        const calculatePercentage = (value) =>
+                            total > 0 ? ((value / total) * 100).toFixed(1) : 0;
 
-    <div id="deviationTable2" class="chart-container"></div>
-  </section>
+                        chart.data = [
+                            {
+                                category: "High Q",
+                                value: data.high,
+                                percentage: calculatePercentage(data.high),
+                                color: am4core.color("#789E38"),
+                            },
+                            {
+                                category: "Med Q",
+                                value: data.medium,
+                                percentage: calculatePercentage(data.medium),
+                                color: am4core.color("#D5C67A"),
+                            },
+                            {
+                                category: "Low Q",
+                                value: data.low,
+                                percentage: calculatePercentage(data.low),
+                                color: am4core.color("#7A0311"),
+                            },
+                        ];
 
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      am4core.ready(function () {
-        am4core.useTheme(am4themes_animated);
+                        let series = chart.series.push(new am4charts.PieSeries3D());
+                        series.dataFields.value = "value";
+                        series.dataFields.category = "category";
+                        series.slices.template.propertyFields.fill = "color";
 
-        // First Chart Code
-        let chart1;
+                        // Tooltip adjustment for labels
+                        series.slices.template.adapter.add("tooltipText", function (text, target) {
+                            return `${target.dataItem.category}: {value} (${target.dataItem.dataContext.percentage}%)`;
+                        });
 
-        const operationSelect1 = document.getElementById("operation");
-        const lineSelect1 = document.getElementById("line");
-        const shiftSelect1 = document.getElementById("shift");
-        const updateButton1 = document.getElementById("updateChart");
+                        // Adjust label position and font size based on screen size
+                        series.labels.template.adapter.add("radius", function (radius, target) {
+                            return window.innerWidth < 768 ? -30 : -60;
+                        });
 
-        async function fetchData1(operation, line, shift) {
-          const response = await fetch(
-            `https://p4data.onrender.com/data?operation=${encodeURIComponent(
-              operation
-            )}&line=${encodeURIComponent(line)}&shift=${encodeURIComponent(
-              shift
-            )}&dataset=1`
-          );
-          const data = await response.json();
-          return data;
-        }
+                        series.labels.template.adapter.add("fontSize", function (size, target) {
+                            return window.innerWidth < 768 ? 12 : 14;
+                        });
 
-        function updateChart1(data) {
-          if (chart1) {
-            chart1.dispose();
-          }
+                        // Limit the maxWidth for labels to ensure they don't overflow container
+                        series.labels.template.maxWidth = window.innerWidth < 768 ? 120 : 200;
+                        series.labels.template.wrap = true;
 
-          chart1 = am4core.create("chartdiv", am4charts.PieChart3D);
-          chart1.hiddenState.properties.opacity = 0;
-          chart1.legend = new am4charts.Legend();
+                        // Decrease the space between arrow and label
+                        series.labels.template.padding(0, 5, 0, 5); // Adjust padding to control space between arrow and label
 
-          const total = data.high + data.medium + data.low;
-          const calculatePercentage = (value) =>
-            total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                        // Ensure labels stay inside the container and are properly rotated
+                        series.labels.template.relativeRotation = 90; // Rotate labels to avoid cutting off
+                        series.labels.template.truncate = false; // Disable truncation
 
-          chart1.data = [
-            {
-              category: "High Quality",
-              value: data.high,
-              percentage: calculatePercentage(data.high),
-              color: am4core.color("#789E38"),
-            },
-            {
-              category: "Medium Quality",
-              value: data.medium,
-              percentage: calculatePercentage(data.medium),
-              color: am4core.color("#D5C67A"),
-            },
-            {
-              category: "Low Quality",
-              value: data.low,
-              percentage: calculatePercentage(data.low),
-              color: am4core.color("#7A0311"),
-            },
-          ];
+                        // Fix label text to show percentage correctly
+                        series.labels.template.adapter.add("text", function (text, target) {
+                            return `{category}: {value} (${target.dataItem.dataContext.percentage}%)`;
+                        });
 
-          let series = chart1.series.push(new am4charts.PieSeries3D());
-          series.dataFields.value = "value";
-          series.dataFields.category = "category";
-          series.slices.template.propertyFields.fill = "color";
+                        // Update the deviation table
+                        updateDeviationTable(chart.data);
+                    }
 
-          series.slices.template.adapter.add("tooltipText", function (text, target) {
-            return `${target.dataItem.category}: {value} ({percentage}%)`;
-          });
 
-          // Adjust label position and font size based on screen size
-          series.labels.template.adapter.add("radius", function (radius, target) {
-            return window.innerWidth < 768 ? -30 : -60;
-          });
-          series.labels.template.adapter.add("fontSize", function (size, target) {
-            return window.innerWidth < 768 ? 12 : 14;
-          });
-          series.labels.template.adapter.add("text", function (text, target) {
-            return `{category}: {value} ({percentage}%)`;
-          });
-          series.labels.template.wrap = true;
-          series.labels.template.maxWidth = window.innerWidth < 768 ? 150 : 300;
 
-          // Update the deviation table
-          updateDeviationTable1(chart1.data);
-        }
+                    function updateDeviationTable(chartData) {
+                        let tableHTML = `
+      <table>
+        <tr>
+          <th>Category</th>
+          <th>Actual %</th>
+          <th>Goal %</th>
+          <th>Deviation %</th>
+        </tr>`;
 
-        function updateDeviationTable1(chartData) {
-          const goals = {
-            "High Quality": 96,
-            "Medium Quality": 3,
-            "Low Quality": 1,
-          };
-          let tableHTML = `
-            <table>
-              <tr>
-                <th>Category</th>
-                <th>Actual %</th>
-                <th>Goal %</th>
-                <th>Deviation %</th>
-              </tr>`;
+                        chartData.forEach((item) => {
+                            const deviation = (
+                                item.percentage - goals[item.category]
+                            ).toFixed(1);
+                            tableHTML += `
+        <tr>
+          <td>${item.category}</td>
+          <td>${item.percentage}%</td>
+          <td>${goals[item.category]}%</td>
+          <td>${deviation}%</td>
+        </tr>`;
+                        });
 
-          chartData.forEach((item) => {
-            const deviation = (item.percentage - goals[item.category]).toFixed(1);
-            tableHTML += `
-              <tr>
-                <td>${item.category}</td>
-                <td>${item.percentage}%</td>
-                <td>${goals[item.category]}%</td>
-                <td>${deviation}%</td>
-              </tr>`;
-          });
+                        tableHTML += `</table>`;
+                        document.getElementById(deviationTableId).innerHTML = tableHTML;
+                    }
 
-          tableHTML += `</table>`;
-          document.getElementById("deviationTable").innerHTML = tableHTML;
-        }
+                    updateButton.addEventListener("click", async function () {
+                        const operation = operationSelect.value;
+                        const line = lineSelect.value;
+                        const shift = shiftSelect.value;
 
-        updateButton1.addEventListener("click", async function () {
-          const operation = operationSelect1.value;
-          const line = lineSelect1.value;
-          const shift = shiftSelect1.value;
+                        console.log(
+                            `Updating chart ${chartId} with operation=${operation}, line=${line}, shift=${shift}`
+                        );
 
-          const chartData = await fetchData1(operation, line, shift);
-          updateChart1(chartData);
+                        const chartData = await fetchData(operation, line, shift);
+                        updateChart(chartData);
+                    });
+
+                    // Initial load
+                    updateButton.click();
+                }
+
+                // Initialize PEIPL - Daily Chart
+                initializeChart(
+                    "chartdiv",
+                    "deviationTable",
+                    "1", // Dataset 1: Daily1
+                    "operation1",
+                    "line1",
+                    "shift1",
+                    "updateChart1",
+                    {
+                        "High Q": 96,
+                        "Med Q": 3,
+                        "Low Q": 1,
+                    }
+                );
+
+                // Initialize PEIPL - Cumulative Chart
+                initializeChart(
+                    "chartdiv3",
+                    "deviationTable3",
+                    "3", // Dataset 3: Cumulative1
+                    "operation3",
+                    "line3",
+                    "shift3",
+                    "updateChart3",
+                    {
+                        "High Q": 96,
+                        "Med Q": 3,
+                        "Low Q": 1,
+                    }
+                );
+
+                // Initialize PEPPL - Daily Chart
+                initializeChart(
+                    "chartdiv2",
+                    "deviationTable2",
+                    "2", // Dataset 2: Daily2
+                    "operation2",
+                    "line2",
+                    "shift2",
+                    "updateChart2",
+                    {
+                        "High Q": 96,
+                        "Med Q": 3,
+                        "Low Q": 1,
+                    }
+                );
+
+                // Initialize PEPPL - Cumulative Chart
+                initializeChart(
+                    "chartdiv4",
+                    "deviationTable4",
+                    "4", // Dataset 4: Cumulative2
+                    "operation4",
+                    "line4",
+                    "shift4",
+                    "updateChart4",
+                    {
+                        "High Q": 96,
+                        "Med Q": 3,
+                        "Low Q": 1,
+                    }
+                );
+            });
         });
-
-        // Initial load for first chart
-        updateButton1.click();
-
-        // Second Chart Code
-        let chart2;
-
-        const operationSelect2 = document.getElementById("operation2");
-        const lineSelect2 = document.getElementById("line2");
-        const shiftSelect2 = document.getElementById("shift2");
-        const updateButton2 = document.getElementById("updateChart2");
-
-        async function fetchData2(operation, line, shift) {
-          const response = await fetch(
-            `https://p4data.onrender.com/data?operation=${encodeURIComponent(
-              operation
-            )}&line=${encodeURIComponent(line)}&shift=${encodeURIComponent(
-              shift
-            )}&dataset=2`
-          );
-          const data = await response.json();
-          return data;
-        }
-
-        function updateChart2(data) {
-          if (chart2) {
-            chart2.dispose();
-          }
-
-          chart2 = am4core.create("chartdiv2", am4charts.PieChart3D);
-          chart2.hiddenState.properties.opacity = 0;
-          chart2.legend = new am4charts.Legend();
-
-          const total = data.high + data.medium + data.low;
-          const calculatePercentage = (value) =>
-            total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-
-          chart2.data = [
-            {
-              category: "High Quality",
-              value: data.high,
-              percentage: calculatePercentage(data.high),
-              color: am4core.color("#789E38"),
-            },
-            {
-              category: "Medium Quality",
-              value: data.medium,
-              percentage: calculatePercentage(data.medium),
-              color: am4core.color("#D5C67A"),
-            },
-            {
-              category: "Low Quality",
-              value: data.low,
-              percentage: calculatePercentage(data.low),
-              color: am4core.color("#7A0311"),
-            },
-          ];
-
-          let series = chart2.series.push(new am4charts.PieSeries3D());
-          series.dataFields.value = "value";
-          series.dataFields.category = "category";
-          series.slices.template.propertyFields.fill = "color";
-
-          series.slices.template.adapter.add("tooltipText", function (text, target) {
-            return `${target.dataItem.category}: {value} ({percentage}%)`;
-          });
-
-          // Adjust label position and font size based on screen size
-          series.labels.template.adapter.add("radius", function (radius, target) {
-            return window.innerWidth < 768 ? -30 : -60;
-          });
-          series.labels.template.adapter.add("fontSize", function (size, target) {
-            return window.innerWidth < 768 ? 12 : 14;
-          });
-          series.labels.template.adapter.add("text", function (text, target) {
-            return `{category}: {value} ({percentage}%)`;
-          });
-          series.labels.template.wrap = true;
-          series.labels.template.maxWidth = window.innerWidth < 768 ? 150 : 300;
-
-          // Update the deviation table
-          updateDeviationTable2(chart2.data);
-        }
-
-        function updateDeviationTable2(chartData) {
-          const goals = {
-            "High Quality": 96, // Adjust goals as needed for the second chart
-            "Medium Quality": 3,
-            "Low Quality": 1,
-          };
-          let tableHTML = `
-            <table>
-              <tr>
-                <th>Category</th>
-                <th>Actual %</th>
-                <th>Goal %</th>
-                <th>Deviation %</th>
-              </tr>`;
-
-          chartData.forEach((item) => {
-            const deviation = (item.percentage - goals[item.category]).toFixed(1);
-            tableHTML += `
-              <tr>
-                <td>${item.category}</td>
-                <td>${item.percentage}%</td>
-                <td>${goals[item.category]}%</td>
-                <td>${deviation}%</td>
-              </tr>`;
-          });
-
-          tableHTML += `</table>`;
-          document.getElementById("deviationTable2").innerHTML = tableHTML;
-        }
-
-        updateButton2.addEventListener("click", async function () {
-          const operation = operationSelect2.value;
-          const line = lineSelect2.value;
-          const shift = shiftSelect2.value;
-
-          const chartData = await fetchData2(operation, line, shift);
-          updateChart2(chartData);
-        });
-
-        // Initial load for second chart
-        updateButton2.click();
-      });
-    });
-  </script>
+    </script>
 </body>
+
 </html>

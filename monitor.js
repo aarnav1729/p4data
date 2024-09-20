@@ -10,39 +10,42 @@ const CLIENT_SECRET = "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";
 const REFRESH_TOKEN =
   "1//04Dq9JjUV-M5LCgYIARAAGAQSNwF-L9IraCNZ0mN-v1okPQ9m5ag38GPQ2wXAf5M64-yqwT9sA2xVB_zyTRJcvz656PbTqXX-TSI";
 
+// Scopes required for Gmail API
 const SCOPES = ["https://www.googleapis.com/auth/gmail.modify"];
 
-// Create an OAuth2 client directly with the provided credentials
+// Create an OAuth2 client with the provided credentials
 const oAuth2Client = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET);
 oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
 
-// Array of email configurations
+// Email configurations for daily and cumulative data
 const emailConfigs = [
   {
     subject:
-      "MES PEIPL Module - Quality - 90 Degree Visual & Final EL - Hourly - Defect Rate Status",
-    outputFile: "extract.csv",
-    seqCounter: 1,
-    currentDay: new Date().getDate(),
+      'MES PEIPL Module - Quality - 90 Degree Visual & Final EL - Hourly - Defect Rate Status',
+    dailyOutputFile: 'extract.csv',
+    cumulativeOutputFile: 'cumulative1.csv',
+    dailySeqCounter: 1,
+    cumulativeSeqCounter: 1,
+    dailyCurrentDay: new Date().getDate(),
   },
   {
     subject:
-      "MES PEPPL - Quality - 90 Degree Visual & Final EL - Hourly - Defect Rate Status",
-    outputFile: "extract2.csv",
-    seqCounter: 1,
-    currentDay: new Date().getDate(),
+      'MES PEPPL Module - Quality - 90 Degree Visual & Final EL - Hourly - Defect Rate Status', // Ensure this matches exactly
+    dailyOutputFile: 'extract2.csv',
+    cumulativeOutputFile: 'cumulative2.csv',
+    dailySeqCounter: 1,
+    cumulativeSeqCounter: 1,
+    dailyCurrentDay: new Date().getDate(),
   },
 ];
 
-// Function to initialize the sequence numbers based on existing data
+// Function to initialize sequence counters based on existing CSV files
 function initializeSeqCounters() {
   emailConfigs.forEach((config) => {
-    if (
-      fs.existsSync(config.outputFile) &&
-      fs.statSync(config.outputFile).size > 0
-    ) {
+    // Initialize daily sequence counter
+    if (fs.existsSync(config.dailyOutputFile) && fs.statSync(config.dailyOutputFile).size > 0) {
       let maxSeqNbr = 0;
-      fs.createReadStream(config.outputFile)
+      fs.createReadStream(config.dailyOutputFile)
         .pipe(csv())
         .on("data", (row) => {
           const seqNbr = parseInt(row.SeqNbr, 10);
@@ -51,15 +54,30 @@ function initializeSeqCounters() {
           }
         })
         .on("end", () => {
-          config.seqCounter = maxSeqNbr + 1;
-          console.log(
-            `SeqNbr initialized to ${config.seqCounter} for ${config.outputFile}`
-          );
+          config.dailySeqCounter = maxSeqNbr + 1;
+          console.log(`Daily SeqNbr initialized to ${config.dailySeqCounter} for ${config.dailyOutputFile}`);
         });
     } else {
-      console.log(
-        `SeqNbr initialized to ${config.seqCounter} for ${config.outputFile}`
-      );
+      console.log(`Daily SeqNbr initialized to ${config.dailySeqCounter} for ${config.dailyOutputFile}`);
+    }
+
+    // Initialize cumulative sequence counter
+    if (fs.existsSync(config.cumulativeOutputFile) && fs.statSync(config.cumulativeOutputFile).size > 0) {
+      let maxSeqNbr = 0;
+      fs.createReadStream(config.cumulativeOutputFile)
+        .pipe(csv())
+        .on("data", (row) => {
+          const seqNbr = parseInt(row.SeqNbr, 10);
+          if (seqNbr > maxSeqNbr) {
+            maxSeqNbr = seqNbr;
+          }
+        })
+        .on("end", () => {
+          config.cumulativeSeqCounter = maxSeqNbr + 1;
+          console.log(`Cumulative SeqNbr initialized to ${config.cumulativeSeqCounter} for ${config.cumulativeOutputFile}`);
+        });
+    } else {
+      console.log(`Cumulative SeqNbr initialized to ${config.cumulativeSeqCounter} for ${config.cumulativeOutputFile}`);
     }
   });
 }
@@ -71,29 +89,34 @@ function watchInboxForConfig(config) {
   setInterval(() => {
     const today = new Date().getDate();
 
-    // Reset the file and sequence number if it's a new day
-    if (today !== config.currentDay) {
-      config.currentDay = today;
-      config.seqCounter = 1; // Reset the sequence number at the start of the day
-      console.log(
-        `A new day has started. Overwriting the file ${config.outputFile}.`
-      );
-      fs.writeFileSync(config.outputFile, ""); // Overwrite the file at the start of the day
+    // Reset the daily file and sequence number if it's a new day
+    if (today !== config.dailyCurrentDay) {
+      config.dailyCurrentDay = today;
+      config.dailySeqCounter = 1; // Reset the daily sequence number
+      console.log(`A new day has started. Overwriting the file ${config.dailyOutputFile}.`);
+      fs.writeFileSync(config.dailyOutputFile, ""); // Overwrite the daily file
+
+      // Initialize the daily CSV with headers
+      const dailyWriter = csvWriter({ sendHeaders: true });
+      dailyWriter.pipe(fs.createWriteStream(config.dailyOutputFile, { flags: 'a' }));
+      dailyWriter.end();
     }
 
+    // Search for unread emails matching the subject
     gmail.users.messages.list(
       {
         userId: "me",
         q: `is:unread subject:"${config.subject}"`,
-        maxResults: 10, // Fetch up to 10 unread emails matching the query
+        maxResults: 10, // Adjust as needed
       },
       (err, res) => {
-        if (err) return console.log("The API returned an error: " + err);
+        if (err) {
+          console.error("The API returned an error: ", err);
+          return;
+        }
         const messages = res.data.messages;
         if (messages && messages.length > 0) {
-          console.log(
-            `Found ${messages.length} new email(s) for subject "${config.subject}". Processing...`
-          );
+          console.log(`Found ${messages.length} new email(s) for subject "${config.subject}". Processing...`);
           messages.forEach((message) => {
             const messageId = message.id;
             getMessage(messageId, config);
@@ -106,11 +129,14 @@ function watchInboxForConfig(config) {
   }, 30000); // Poll every 30 seconds
 }
 
-// Retrieve and process the message with the specified ID
+// Function to retrieve and process a specific email
 function getMessage(messageId, config) {
   const gmail = google.gmail({ version: "v1", auth: oAuth2Client });
   gmail.users.messages.get({ userId: "me", id: messageId }, (err, res) => {
-    if (err) return console.log("Error fetching email:", err);
+    if (err) {
+      console.error(`Error fetching email ID ${messageId}:`, err);
+      return;
+    }
 
     const message = res.data;
     const payload = message.payload;
@@ -118,7 +144,7 @@ function getMessage(messageId, config) {
     let plainTextBody = "";
     let htmlBody = "";
 
-    // Recursively process parts and extract the plain text or HTML body
+    // Recursively extract the body from email parts
     function getBody(parts) {
       parts.forEach((part) => {
         if (part.mimeType === "text/plain" && part.body.data) {
@@ -126,7 +152,7 @@ function getMessage(messageId, config) {
         } else if (part.mimeType === "text/html" && part.body.data) {
           htmlBody = Buffer.from(part.body.data, "base64").toString();
         } else if (part.parts) {
-          getBody(part.parts); // Check nested parts
+          getBody(part.parts);
         }
       });
     }
@@ -138,7 +164,8 @@ function getMessage(messageId, config) {
       extractTableDataFromText(plainTextBody, config);
     } else if (htmlBody) {
       console.log("Extracting table data from HTML body...");
-      extractTableDataFromText(htmlBody, config); // Assuming similar parsing for HTML
+      // Implement HTML parsing if necessary
+      extractTableDataFromText(htmlBody, config); // Assuming similar structure
     } else {
       console.log("No plain text or HTML body found.");
     }
@@ -154,7 +181,7 @@ function getMessage(messageId, config) {
       },
       (err) => {
         if (err) {
-          console.log("Error marking email as read:", err);
+          console.error(`Error marking email ID ${messageId} as read:`, err);
         } else {
           console.log(`Email with ID ${messageId} marked as read.`);
         }
@@ -163,33 +190,29 @@ function getMessage(messageId, config) {
   });
 }
 
-// Function to reconstruct lines that are split across multiple lines
+// Function to reconstruct lines that may be split across multiple lines
 function reconstructLines(lines) {
   const reconstructedLines = [];
   let currentLine = "";
 
   lines.forEach((line) => {
-    if (/^\d+\.\d+/.test(line.trim())) {
-      // New data entry starts
-      if (currentLine) {
-        reconstructedLines.push(currentLine.trim());
-      }
-      currentLine = line.trim();
-    } else {
-      // Continuation of the current data entry
-      currentLine += " " + line.trim();
+    currentLine += " " + line.trim();
+    const tokens = currentLine.trim().split(/\s+/);
+    if (tokens.length >= 9) { // Adjust based on expected number of tokens
+      reconstructedLines.push(currentLine.trim());
+      currentLine = "";
     }
   });
 
-  // Add the last data entry
-  if (currentLine) {
+  // Add any remaining line
+  if (currentLine.trim().length > 0) {
     reconstructedLines.push(currentLine.trim());
   }
 
   return reconstructedLines;
 }
 
-// Function to extract table data from the plain text body
+// Function to extract table data from the email body
 function extractTableDataFromText(textBody, config) {
   const tableStartIndex = textBody.indexOf("SeqNbr");
   const tableEndIndex = textBody.lastIndexOf("Thanks,") || textBody.length;
@@ -199,11 +222,11 @@ function extractTableDataFromText(textBody, config) {
     return;
   }
 
-  // Extract and log the table text
+  // Extract the table text
   const tableText = textBody.substring(tableStartIndex, tableEndIndex).trim();
   console.log("Table text extracted:", tableText);
 
-  // Split the table into lines
+  // Split into lines and clean
   const lines = tableText
     .split("\n")
     .map((line) => line.trim())
@@ -214,43 +237,53 @@ function extractTableDataFromText(textBody, config) {
     return;
   }
 
-  // Reconstruct lines to combine split data entries
+  // Reconstruct lines to handle multi-line entries
   const reconstructedLines = reconstructLines(lines);
 
-  // Prepare the CSV writer with appropriate headers
-  let writer;
-  const isFileEmpty =
-    !fs.existsSync(config.outputFile) ||
-    fs.statSync(config.outputFile).size === 0;
+  // Prepare the CSV writers
+  // Daily CSV
+  const isDailyFileEmpty =
+    !fs.existsSync(config.dailyOutputFile) || fs.statSync(config.dailyOutputFile).size === 0;
+  const dailyWriter = csvWriter({ sendHeaders: isDailyFileEmpty });
+  dailyWriter.pipe(fs.createWriteStream(config.dailyOutputFile, { flags: 'a' }));
 
-  // Always open the file in append mode
-  writer = csvWriter({ sendHeaders: isFileEmpty }); // sendHeaders only if file is empty
-  writer.pipe(fs.createWriteStream(config.outputFile, { flags: "a" }));
+  // Cumulative CSV
+  const isCumulativeFileEmpty =
+    !fs.existsSync(config.cumulativeOutputFile) || fs.statSync(config.cumulativeOutputFile).size === 0;
+  const cumulativeWriter = csvWriter({ sendHeaders: isCumulativeFileEmpty });
+  cumulativeWriter.pipe(fs.createWriteStream(config.cumulativeOutputFile, { flags: 'a' }));
 
   // Parse each reconstructed line
   reconstructedLines.forEach((line) => {
     const parsedLine = parseLine(line);
     if (parsedLine) {
-      // Assign your own sequential counter
-      parsedLine.SeqNbr = config.seqCounter++;
+      // Write to daily CSV
+      parsedLine.SeqNbr = config.dailySeqCounter++;
+      dailyWriter.write(parsedLine);
 
-      // Write the parsed line to CSV
-      writer.write(parsedLine);
+      // Write to cumulative CSV
+      parsedLine.SeqNbr = config.cumulativeSeqCounter++;
+      cumulativeWriter.write(parsedLine);
     }
   });
 
-  writer.end(() => {
-    console.log(`Table data extracted and saved to ${config.outputFile}`);
+  dailyWriter.end(() => {
+    console.log(`Daily data extracted and saved to ${config.dailyOutputFile}`);
+  });
+
+  cumulativeWriter.end(() => {
+    console.log(`Cumulative data extracted and saved to ${config.cumulativeOutputFile}`);
   });
 }
 
-// Function to parse a line of the table
+// Function to parse a single line of the table
 function parseLine(line) {
   // Split the line into tokens
   const tokens = line.trim().split(/\s+/);
 
   // If the line has less than the expected number of tokens, skip it
-  if (tokens.length < 8) {
+  if (tokens.length < 9) { // Adjust based on expected number of tokens
+    console.log(`Skipping line due to insufficient tokens: "${line}"`);
     return null;
   }
 
@@ -265,6 +298,7 @@ function parseLine(line) {
   const lineIndex = tokens.findIndex((token) => /^Line-\d+$/.test(token));
 
   if (lineIndex === -1) {
+    console.log(`Skipping line due to missing Line identifier: "${line}"`);
     return null; // Can't find Line-\d+, skip this line
   }
 
@@ -293,8 +327,10 @@ function parseLine(line) {
   };
 }
 
-// Start the inbox monitoring process
-initializeSeqCounters(); // Initialize seqCounters before starting inbox watch
+// Initialize sequence counters
+initializeSeqCounters();
+
+// Start monitoring inbox for each configuration
 emailConfigs.forEach((config) => {
   watchInboxForConfig(config);
 });
